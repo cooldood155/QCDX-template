@@ -1,17 +1,17 @@
-# QCDX
+# QCDX-template
 
 [![verify](https://github.com/cooldood155/QCDX-template/actions/workflows/verify.yml/badge.svg)](https://github.com/cooldood155/QCDX-template/actions/workflows/verify.yml) [![release](https://github.com/cooldood155/QCDX-template/actions/workflows/release.yml/badge.svg)](https://github.com/cooldood155/QCDX-template/actions/workflows/release.yml)
 
 [Documentation](#documentation)
 
-**Checkout the core repository:** <https://github.com/cooldood155/QCDX>
-
----
-
 A template for C and C++ projects built on **projectkit**, a set of CMake
 modules and scripts under `cmake/projectkit/`. A fresh copy already contains a
 working library, application, test and build-time tool, so it configures,
-builds, tests, installs and packages before you start writting code.
+builds, tests, installs and packages before you start writing code.
+
+This repository is generated: on every [QCDX](https://github.com/cooldood155/QCDX)
+release it is replaced with exactly what `pk new qcdx` creates. Changes
+belong in QCDX, a commit made here is overwritten by the next release.
 
 - **CMake 3.30+, Ninja and Conan 2**, with presets for native builds, host
   tools and cross builds.
@@ -33,7 +33,7 @@ builds, tests, installs and packages before you start writting code.
 | :-- | :-- |
 | CMake | 3.30 or newer |
 | Ninja | any recent |
-| Python | 3.8 or newer |
+| Python | 3.9 or newer |
 | Conan | 2.x |
 | Git | any recent |
 | Compiler | GCC 13+, Clang 18+, AppleClang 15+ or MSVC 19.30+ |
@@ -46,26 +46,33 @@ toolchain combination is listed in [`docs/BUILDING.md`](docs/BUILDING.md).
 
 ## Quick start
 
-Create a repository from the template, then clone it:
+The fastest way is the QCDX package, which creates the project with its own
+name in one step:
 
 ```bash
-gh repo create my-project --template cooldood155/QCDX --public --clone
+pipx install qcdx
+pk new myproject --description="What this project is" --license=MIT
+cd myproject
+```
+
+Or create a repository from this template, then clone it:
+
+```bash
+gh repo create my-project --template cooldood155/QCDX-template --public --clone
 cd my-project
 ```
 
 Without the GitHub CLI, press **Use this template** on GitHub and clone the
-new repository.
-
-Give the project its own name. The rename covers directories, file names and
-file contents, and refuses to run on a dirty tree so `git diff` shows exactly
-what it changed:
+new repository. Then give the project its own name. The rename covers
+directories, file names and file contents, and refuses to run on a dirty tree
+so `git diff` shows exactly what it changed:
 
 ```bash
 ./scripts/pk.py rename myproject --description="What this project is" --version=0.1.0
 git diff --stat
 ```
 
-Check the tools, then build, run and test:
+Either way, check the tools, then build, run and test:
 
 ```bash
 ./scripts/pk.py doctor
@@ -74,9 +81,9 @@ Check the tools, then build, run and test:
 ./scripts/pk.py test
 ```
 
-The first `build` installs the Conan dependencies and configures CMake; later
-builds only rebuild. Every Conan and CMake command `pk` runs is printed before
-it runs, and `-n` prints them without running anything.
+The first `build` installs the Conan dependencies and runs the CMake
+configuration; later builds only rebuild. Every Conan and CMake command `pk`
+runs is printed before it runs, and `-n` prints them without running anything.
 
 Then replace this README with your own project's.
 
@@ -90,7 +97,7 @@ Then replace this README with your own project's.
 | `pk stage` | install into `stage/`, check the package and write a report |
 | `pk dep ...` | add, change, remove, update and inspect third-party packages |
 | `pk status` | the build trees, their options and dependency state |
-| `pk sync` | pull projectkit updates from this template |
+| `pk sync` | pull projectkit updates from QCDX |
 | `pk full-clean` | remove everything the build generated |
 | `pk help COMMAND` | every flag a command accepts |
 
@@ -98,9 +105,8 @@ Build types are `debug` (default), `release`, `relwithdebinfo` and
 `minsizerel`. Options such as `--werror`, `--lib=shared` or
 `--sanitize=address,undefined` are remembered per build tree.
 
-To type `pk` instead of `./scripts/pk.py` from anywhere inside any project
-made from this template, install the shell function for bash or PowerShell
-once, as described in
+With `pipx install qcdx`, `pk` works from anywhere inside any project. Without
+it, install the shell function for bash or PowerShell once, as described in
 [`PK.md`](cmake/projectkit/docs/PK.md#install-as-a-shell-command).
 
 ### Without pk
@@ -188,7 +194,8 @@ installed files, CPack and the host tools.
 The same script runs in CI for every push and pull request to `main` that
 changes code: on Linux (`x86_64`, `armv8`), macOS (`armv8`) and Windows (MSYS2
 UCRT64), and as cross builds for Windows `x86_64` (MinGW-w64) and `arm64`
-(llvm-mingw).
+(llvm-mingw). Every sync from QCDX is such a push, the badge above shows that
+the newest QCDX release still builds everywhere.
 
 ## Packaging
 
@@ -206,7 +213,7 @@ target_link_libraries(other PRIVATE myproject::myproject)
 
 ## Releases
 
-Push a version tag and CI builds, tests and archives every target provided then
+Push a version tag and CI builds, tests and archives every target, then
 creates a draft GitHub release with checksums:
 
 ```bash
@@ -228,15 +235,17 @@ Details: [`RELEASE.md`](cmake/projectkit/docs/RELEASE.md).
 ## Keeping projectkit up to date
 
 Every project made from this template carries its own copy of the kit. When
-the template improves, bring the changes in with one command:
+QCDX improves, bring the changes in with one command:
 
 ```bash
 pk sync -n
 pk sync
 ```
 
-Only the template's changes are applied, as a 3-way merge, changes made to the
-kit in your project are kept. The result is a single commit.
+Only QCDX's changes are applied, as a 3-way merge, changes made to the kit in
+your project are kept. The result is a single commit.
+`scripts/helpers/pk/upstream.conf` records the QCDX commit this template came
+from, so the first sync starts from the exact base.
 
 ## Layout
 

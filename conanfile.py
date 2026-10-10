@@ -16,7 +16,7 @@ class QcdxRecipe(ConanFile):
   description = "Template project built on ProjectKit"
   license = "MIT"
   author = "Evan R. Reumann (evanrileyreumann@gmail.com)"
-  url = "https://github.com/cooldood155/QCDX"
+  url = "https://github.com/cooldood155/QCDX-template"
 
   options = {
     "shared": [True, False],
