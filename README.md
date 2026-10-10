@@ -1,8 +1,12 @@
 # QCDX
 
-[![verify](https://github.com/cooldood155/QCDX/actions/workflows/verify.yml/badge.svg)](https://github.com/cooldood155/QCDX/actions/workflows/verify.yml) [![release](https://github.com/cooldood155/QCDX/actions/workflows/release.yml/badge.svg)](https://github.com/cooldood155/QCDX/actions/workflows/release.yml)
+[![verify](https://github.com/cooldood155/QCDX-template/actions/workflows/verify.yml/badge.svg)](https://github.com/cooldood155/QCDX-template/actions/workflows/verify.yml) [![release](https://github.com/cooldood155/QCDX-template/actions/workflows/release.yml/badge.svg)](https://github.com/cooldood155/QCDX-template/actions/workflows/release.yml)
 
 [Documentation](#documentation)
+
+**Checkout the core repository:** <https://github.com/cooldood155/QCDX>
+
+---
 
 A template for C and C++ projects built on **projectkit**, a set of CMake
 modules and scripts under `cmake/projectkit/`. A fresh copy already contains a
