@@ -32,6 +32,7 @@ import zipfile
 from typing import Dict, List, Optional, Set, Tuple
 
 from . import targets
+from . import tree as pktree
 from .common import (BUILD_TYPES, C, capture, detect_project, entry, err, have, load_conf, out, remove,
                      repo_root, run, has_file, setup_output, walk_files)
 
@@ -74,6 +75,7 @@ DEFAULTS = {
     "PK_RELEASE_HASH_LINK": "",
     "PK_RELEASE_DRAFT": "ON",
     "PK_RELEASE_README": "",
+    "PK_RELEASE_SYNC": "",
 }
 
 DEFAULT_NOTES = """\
@@ -171,12 +173,15 @@ def sha256(path: str) -> str:
 class Release:
     def __init__(self, root: str) -> None:
         self.root = root
-        self.conf = load_conf(root, CONF)
+        self.conf_path = pktree.helper(root, "release/release.conf")
+        self.conf = load_conf(root, self.conf_path)
         self.project = detect_project(root)
         self.version = self.read_version()
 
     def get(self, name: str) -> str:
         """Get the release configuration setting `name`."""
+        if name == "PK_RELEASE_NOTES":
+            return self.conf.get(name, pktree.helper(self.root, "release/NOTES.md"))
         return self.conf.get(name, DEFAULTS[name])
 
     def read_version(self) -> str:
@@ -241,7 +246,7 @@ class Release:
 
         names = commas_to_spaces(chosen) or commas_to_spaces(self.get("PK_RELEASE_TARGETS"))
         if not names:
-            fail("no targets: set PK_RELEASE_TARGETS in " + CONF)
+            fail("no targets: set PK_RELEASE_TARGETS in " + self.conf_path)
 
         runners = self.runners()
         problems = []
@@ -250,9 +255,9 @@ class Release:
                 problems.append(f"unknown target '{name}' (known: {' '.join(r[0] for r in targets.RECORDS)})")
             elif name not in runners:
                 problems.append(f"no CI runner for '{name}', add it to PK_RELEASE_RUNNERS")
-            elif self.is_cross(name) and not os.path.isfile(
-                    os.path.join(self.root, "profiles", name[len("cross-"):])):
-                problems.append(f"'{name}' needs profiles/{name[len('cross-'):]}")
+            elif self.is_cross(name) and not os.path.isfile(pktree.profile(self.root, name[len("cross-"):])):
+                problems.append(f"'{name}' needs "
+                                f"{pktree.load_or_exit(self.root).rel('profiles', name[len('cross-'):])}")
         if len(set(names)) != len(names):
             problems.append("a target is listed twice")
 
@@ -536,8 +541,19 @@ class Release:
         if readme and not os.path.isfile(os.path.join(self.root, readme)):
             fail(f"PK_RELEASE_README: no file {readme}")
 
+        sync = [f"{readme}=README.md"] if readme else []
+        for relative in commas_to_spaces(self.get("PK_RELEASE_SYNC")):
+            if "=" in relative:
+                fail(f"PK_RELEASE_SYNC: '{relative}' contains '='")
+            if not os.path.isfile(os.path.join(self.root, relative)):
+                fail(f"PK_RELEASE_SYNC: no file {relative}")
+            name = os.path.basename(relative)
+            if any(pair.endswith("=" + name) for pair in sync):
+                fail(f"PK_RELEASE_SYNC: {name} is already synced to the releases repository")
+            sync.append(f"{relative}={name}")
+
         out(notes)
-        gh_output(notes=notes_path, sums=sums, dist=dist, readme=readme,
+        gh_output(notes=notes_path, sums=sums, dist=dist, readme=readme, sync=" ".join(sync),
                   title=f"{self.project} {tag[1:] if tag.startswith('v') else tag}")
         return 0
 
@@ -705,8 +721,7 @@ class Portability:
 
         found: List[str] = []
         if self.cross:
-            with open(os.path.join(self.release.root, "profiles", self.target[len("cross-"):]),
-                      encoding="utf-8") as file:
+            with open(pktree.profile(self.release.root, self.target[len("cross-"):]), encoding="utf-8") as file:
                 text = file.read()
             found += re.findall(r'"c":\s*"([^"]+)"', text)
             found += re.findall(r'detect_\w+_compiler\("([^"]+)"\)', text)
@@ -742,7 +757,7 @@ class Portability:
         return find
 
     def windows(self) -> None:
-        """Ensures PE binaries resolve dependencies and bundles toolchain DLLs 
+        """Ensures PE binaries resolve dependencies and bundles toolchain DLLs
         according to the PK_RELEASE_RUNTIME setting."""
 
         mode = self.release.get("PK_RELEASE_RUNTIME").lower()
@@ -887,7 +902,8 @@ def annotate(message: str) -> None:
 
 
 def usage() -> None:
-    out(USAGE.format(self=SELF, conf=CONF))
+    root = pktree.find_root(os.getcwd())
+    out(USAGE.format(self=SELF, conf=pktree.helper(root, "release/release.conf") if root else CONF))
 
 
 def main(argv: List[str], root: Optional[str] = None) -> int:

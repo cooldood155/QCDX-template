@@ -26,6 +26,10 @@ import shutil
 import subprocess
 import sys
 
+# pklib is in the kit's scripts folder, two levels up.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from pklib import tree as pktree  # noqa: E402
+
 SCHEMA = 1
 KINDS = ("requires", "test", "tool")
 TRAITS = ("headers", "libs", "run", "visible", "transitive_headers",
@@ -233,7 +237,7 @@ class Repo:
 
     def profile_args(self, profile):
         def resolve(name):
-            candidate = os.path.join("profiles", name)
+            candidate = pktree.load_or_exit(self.root).rel("profiles", name)
             if os.path.isfile(os.path.join(self.root, candidate)):
                 return candidate
             return name
@@ -308,9 +312,9 @@ class Repo:
         profile = profile or self.profiles[0]
         digest = hashlib.sha1()
 
+        tree = pktree.load_or_exit(self.root)
         for rel in ("conanfile.py", "deps.json", "conan.lock",
-                    os.path.join("profiles", self.native),
-                    os.path.join("profiles", profile)):
+                    tree.rel("profiles", self.native), tree.rel("profiles", profile)):
             path = os.path.join(self.root, rel)
             if os.path.isfile(path):
                 with open(path, "rb") as handle:
@@ -1266,7 +1270,7 @@ def cmd_check(repo, args):
             proc = repo.capture(probe, check=False)
 
             if proc.returncode != 0:
-                errors = [l for l in (proc.stderr or "").splitlines() if "ERROR" in l]
+                errors = [line for line in (proc.stderr or "").splitlines() if "ERROR" in line]
                 problems.append("conan.lock does not satisfy deps.json for profile '{}': "
                                 "{}\n    fix: 'pk dep lock' (keeps other pins) or 'pk dep "
                                 "update <name>'".format(profile, " ".join(errors[-2:]) or

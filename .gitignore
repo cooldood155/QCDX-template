@@ -155,14 +155,21 @@ __pycache__/
 .elc
 
 # ==========================================
+# qcdx (pk)
+# ==========================================
+
+# Release settings; override Visual Studios [Rr]elease/ rule
+!scripts/helpers/release/
+
+# ProjectKit install staging (pk stage, pk install, pk verify)
+stage/
+
+# The drawing 'pk tree draw' writes to edit; .pk/tree.conf is the tree
+.pk/tree.txt
+
+# ==========================================
 # In-Project Deamed Personal Directories
 # ==========================================
 
 docs/archive
 docs/notes
-
-# ProjectKit install staging (pk stage, pk install, pk verify)
-stage/
-
-# Release settings; override the Visual Studio [Rr]elease/ rule
-!scripts/helpers/release/
